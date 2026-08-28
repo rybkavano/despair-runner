@@ -27,7 +27,8 @@ const ui = {
   restartBtn:document.getElementById('restartBtn'),
   deathCheckpointBtn:document.getElementById('deathCheckpointBtn'),
   saveSlots:document.getElementById('saveSlots'),
-  mobileControls:document.getElementById('mobileControls'), mobileDpad:document.getElementById('mobileDpad'),
+  mobileControls:document.getElementById('mobileControls'),
+  mobileJoystick:document.getElementById('mobileJoystick'), joystickKnob:document.getElementById('joystickKnob'),
   mobilePrimary:document.getElementById('mobilePrimary'), mobileSecondary:document.getElementById('mobileSecondary'),
   mobileSprint:document.getElementById('mobileSprint'), fullscreenBtn:document.getElementById('fullscreenBtn'),
   victoryEyebrow:document.getElementById('victoryEyebrow'), victoryTitle:document.getElementById('victoryTitle'),
@@ -5543,16 +5544,126 @@ if(isTouchDevice){
 
 let mobileControlSignature='';
 
+const mobileStick={
+  active:false,
+  pointerId:null,
+  x:0,
+  y:0,
+  power:0,
+  maxRadius:46
+};
+
+function applyJoystickKeys(){
+  const threshold=.28;
+
+  keys.KeyA=
+    mobileStick.x < -threshold;
+
+  keys.KeyD=
+    mobileStick.x > threshold;
+
+  keys.KeyW=
+    mobileStick.y < -threshold;
+
+  keys.KeyS=
+    mobileStick.y > threshold;
+}
+
+function resetJoystick(){
+  mobileStick.active=false;
+  mobileStick.pointerId=null;
+  mobileStick.x=0;
+  mobileStick.y=0;
+  mobileStick.power=0;
+
+  keys.KeyW=false;
+  keys.KeyA=false;
+  keys.KeyS=false;
+  keys.KeyD=false;
+
+  if(ui.joystickKnob){
+    ui.joystickKnob.style.transform=
+      'translate3d(0px,0px,0)';
+  }
+
+  if(ui.mobileJoystick){
+    ui.mobileJoystick.classList.remove(
+      'engaged'
+    );
+  }
+}
+
+function updateJoystickFromPointer(e){
+  if(!ui.mobileJoystick)return;
+
+  const r=
+    ui.mobileJoystick
+      .getBoundingClientRect();
+
+  const cx=
+    r.left+r.width/2;
+
+  const cy=
+    r.top+r.height/2;
+
+  let dx=
+    e.clientX-cx;
+
+  let dy=
+    e.clientY-cy;
+
+  // Truth Bullet only needs left/right.
+  if(mode==='shooter'){
+    dy=0;
+  }
+
+  const rawLen=
+    Math.hypot(
+      dx,
+      dy
+    );
+
+  const radius=
+    Math.min(
+      mobileStick.maxRadius,
+      rawLen
+    );
+
+  if(rawLen>0){
+    dx=
+      dx/rawLen*radius;
+
+    dy=
+      dy/rawLen*radius;
+  }
+
+  mobileStick.x=
+    dx/
+    mobileStick.maxRadius;
+
+  mobileStick.y=
+    dy/
+    mobileStick.maxRadius;
+
+  mobileStick.power=
+    Math.min(
+      1,
+      rawLen/
+      mobileStick.maxRadius
+    );
+
+  if(ui.joystickKnob){
+    ui.joystickKnob.style.transform=
+      `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0)`;
+  }
+
+  applyJoystickKeys();
+}
+
 function clearTouchKeys(){
-  [
-    'KeyW',
-    'KeyA',
-    'KeyS',
-    'KeyD',
-    'ShiftLeft'
-  ].forEach(
-    code=>keys[code]=false
-  );
+  resetJoystick();
+
+  keys.ShiftLeft=false;
 
   document
     .querySelectorAll(
@@ -5576,8 +5687,48 @@ function setTouchKey(code,on,button=null){
   }
 }
 
+function setMobileActionText(button,icon,label){
+  if(!button)return;
+
+  const iconEl=
+    button.querySelector(
+      '.actionIcon'
+    );
+
+  const labelEl=
+    button.querySelector(
+      '.actionLabel'
+    );
+
+  if(iconEl){
+    iconEl.textContent=icon;
+  }
+
+  if(labelEl){
+    labelEl.textContent=label;
+  }
+}
+
+function pulseMobileAction(button){
+  if(!button)return;
+
+  button.classList.remove(
+    'tapPulse'
+  );
+
+  void button.offsetWidth;
+
+  button.classList.add(
+    'tapPulse'
+  );
+}
+
 function mobilePrimaryAction(){
   unlockGameAudio();
+
+  pulseMobileAction(
+    ui.mobilePrimary
+  );
 
   if(mode==='jumper'){
     bonusJump();
@@ -5596,6 +5747,10 @@ function mobilePrimaryAction(){
 
 function mobileSecondaryAction(){
   unlockGameAudio();
+
+  pulseMobileAction(
+    ui.mobileSecondary
+  );
 
   if(mode==='jumper'){
     if(
@@ -5619,10 +5774,15 @@ function mobileSecondaryAction(){
 }
 
 function updateMobileControls(force=false){
-  if(!isTouchDevice||!ui.mobileControls)return;
+  if(
+    !isTouchDevice ||
+    !ui.mobileControls
+  ){
+    return;
+  }
 
   const sig=
-    `${mode}:${currentStageType}:${!!cinematic}`;
+    `${mode}:${currentStageType}:${!!cinematic}:${!!activeItem}`;
 
   if(
     !force &&
@@ -5659,7 +5819,7 @@ function updateMobileControls(force=false){
     return;
   }
 
-  ui.mobileDpad.classList.remove(
+  ui.mobileJoystick.classList.remove(
     'hidden',
     'horizontalOnly'
   );
@@ -5677,36 +5837,58 @@ function updateMobileControls(force=false){
   );
 
   if(mode==='jumper'){
-    ui.mobileDpad.classList.add(
+    resetJoystick();
+
+    ui.mobileJoystick.classList.add(
       'hidden'
     );
 
-    ui.mobilePrimary.textContent=
-      'ПРЫЖОК';
+    setMobileActionText(
+      ui.mobilePrimary,
+      '↑',
+      'ПРЫЖОК'
+    );
 
-    ui.mobileSecondary.textContent=
-      'ВНИЗ';
+    setMobileActionText(
+      ui.mobileSecondary,
+      '↓',
+      'ВНИЗ'
+    );
 
     ui.mobileSprint.classList.add(
       'hidden'
     );
 
   }else if(mode==='shooter'){
-    ui.mobileDpad.classList.add(
+    resetJoystick();
+
+    ui.mobileJoystick.classList.add(
       'horizontalOnly'
     );
 
-    ui.mobilePrimary.textContent=
-      'ОГОНЬ';
+    setMobileActionText(
+      ui.mobilePrimary,
+      '●',
+      'ОГОНЬ'
+    );
 
-    ui.mobileSecondary.textContent=
-      'ПРЫЖОК';
+    setMobileActionText(
+      ui.mobileSecondary,
+      '↑',
+      'ПРЫЖОК'
+    );
 
     ui.mobileSprint.classList.add(
       'hidden'
     );
 
   }else if(mode==='monokuma'){
+    setMobileActionText(
+      ui.mobilePrimary,
+      '',
+      ''
+    );
+
     ui.mobilePrimary.classList.add(
       'hidden'
     );
@@ -5720,23 +5902,107 @@ function updateMobileControls(force=false){
     );
 
   }else{
-    ui.mobilePrimary.textContent=
-      currentStageType==='junko'
-        ? 'РЫВОК'
-        : 'РЫВОК';
+    setMobileActionText(
+      ui.mobilePrimary,
+      '✦',
+      'РЫВОК'
+    );
 
-    ui.mobileSecondary.textContent=
+    setMobileActionText(
+      ui.mobileSecondary,
+      activeItem
+        ? 'E'
+        : 'E',
       activeItem
         ? 'ПРЕДМЕТ'
-        : 'E';
+        : 'ПУСТО'
+    );
 
-    ui.mobileSprint.textContent=
-      'СПРИНТ';
+    setMobileActionText(
+      ui.mobileSprint,
+      '»',
+      'СПРИНТ'
+    );
   }
 }
 
 function setupMobileControls(){
   if(!isTouchDevice)return;
+
+  if(ui.mobileJoystick){
+    const stickDown=e=>{
+      e.preventDefault();
+      unlockGameAudio();
+
+      mobileStick.active=true;
+      mobileStick.pointerId=
+        e.pointerId;
+
+      ui.mobileJoystick.classList.add(
+        'engaged'
+      );
+
+      try{
+        ui.mobileJoystick
+          .setPointerCapture(
+            e.pointerId
+          );
+      }catch(err){}
+
+      updateJoystickFromPointer(e);
+    };
+
+    const stickMove=e=>{
+      if(
+        !mobileStick.active ||
+        e.pointerId!==
+          mobileStick.pointerId
+      ){
+        return;
+      }
+
+      e.preventDefault();
+      updateJoystickFromPointer(e);
+    };
+
+    const stickUp=e=>{
+      if(
+        mobileStick.pointerId!==null &&
+        e.pointerId!==
+          mobileStick.pointerId
+      ){
+        return;
+      }
+
+      e.preventDefault();
+      resetJoystick();
+    };
+
+    ui.mobileJoystick.addEventListener(
+      'pointerdown',
+      stickDown
+    );
+
+    ui.mobileJoystick.addEventListener(
+      'pointermove',
+      stickMove
+    );
+
+    ui.mobileJoystick.addEventListener(
+      'pointerup',
+      stickUp
+    );
+
+    ui.mobileJoystick.addEventListener(
+      'pointercancel',
+      stickUp
+    );
+
+    ui.mobileJoystick.addEventListener(
+      'lostpointercapture',
+      stickUp
+    );
+  }
 
   document
     .querySelectorAll(

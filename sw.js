@@ -1,4 +1,4 @@
-const CACHE_NAME='despair-runner-v1.1-offline-20260829';
+const CACHE_NAME='despair-runner-v1.2-glass-controls-20260829';
 const OFFLINE_URL='./index.html';
 const PRECACHE_URLS=[
   "./index.html",

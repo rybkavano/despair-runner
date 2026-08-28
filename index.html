@@ -47,7 +47,7 @@
 
   <div id="startScreen" class="overlay show">
     <section class="panel intro">
-      <div class="eyebrow">RELEASE 1.1 · OFFLINE PWA · PC + IOS</div>
+      <div class="eyebrow">RELEASE 1.2 · GLASS JOYSTICK · OFFLINE</div>
       <h1>DESPAIR<br><span>RUNNER</span></h1>
       <p>Шуичи тащит надежду через мир, который пытается утопить его в отчаянии. Собирай энергию для Кибо, пробивай путь и переживи 20 этапов.</p>
       <div class="controls desktopControls">
@@ -178,17 +178,29 @@
   <button id="fullscreenBtn" class="fullscreenFab" title="Полный экран">⛶</button>
 
   <div id="mobileControls" aria-hidden="true">
-    <div id="mobileDpad" class="mobileDpad">
-      <button class="touchKey mobileUp" data-touch-key="KeyW" aria-label="Вверх">▲</button>
-      <button class="touchKey mobileLeft" data-touch-key="KeyA" aria-label="Влево">◀</button>
-      <button class="touchKey mobileRight" data-touch-key="KeyD" aria-label="Вправо">▶</button>
-      <button class="touchKey mobileDown" data-touch-key="KeyS" aria-label="Вниз">▼</button>
+    <div id="mobileJoystick" class="mobileJoystick" aria-label="Джойстик движения">
+      <div class="joystickGlow"></div>
+      <div class="joystickRing"></div>
+      <div id="joystickKnob" class="joystickKnob">
+        <span></span>
+      </div>
     </div>
 
     <div id="mobileActions" class="mobileActions">
-      <button id="mobileSprint" class="mobileSprint touchKey" data-touch-key="ShiftLeft">СПРИНТ</button>
-      <button id="mobileSecondary" class="mobileSecondary">ПРЕДМЕТ</button>
-      <button id="mobilePrimary" class="mobilePrimary">РЫВОК</button>
+      <button id="mobileSprint" class="mobileSprint touchKey glassAction" data-touch-key="ShiftLeft">
+        <span class="actionIcon">»</span>
+        <span class="actionLabel">СПРИНТ</span>
+      </button>
+
+      <button id="mobileSecondary" class="mobileSecondary glassAction">
+        <span class="actionIcon">E</span>
+        <span class="actionLabel">ПРЕДМЕТ</span>
+      </button>
+
+      <button id="mobilePrimary" class="mobilePrimary glassAction">
+        <span class="actionIcon">✦</span>
+        <span class="actionLabel">РЫВОК</span>
+      </button>
     </div>
   </div>
 
