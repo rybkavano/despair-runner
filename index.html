@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#09090d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Despair Runner">
+<title>Despair Runner</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="1280" height="720"></canvas>
+
+  <div id="hud">
+    <div class="chip purple"><small>УРОВЕНЬ</small><b id="hudLevel">1 / 20</b></div>
+    <div class="chip gold"><small>ЭНЕРГИЯ КИБО</small><b id="hudCoins">0 / 7</b></div>
+    <div class="chip cyan"><small>XP</small><b id="hudXp">0</b></div>
+    <div class="chip pink"><small>ПЕРДЁЖ-КОМБО</small><b id="hudCombo">x1</b></div><div class="chip lime"><small>КОМБО МОНЕТ</small><b id="hudCoinCombo">x0</b></div>
+  </div>
+
+  <div id="perkHud"></div><div id="itemHud"><div class="item-title">ПРЕДМЕТ [E]</div><div id="itemText">пусто</div></div>
+  <div id="kiiboHud">
+    <div class="kiibo-title">КИБО</div>
+    <div class="kiibo-sub" id="kiiboText">Пока не активен</div>
+    <div class="kiibo-bar"><div id="kiiboFill"></div></div>
+  </div>
+  <div id="danger">ОНИ УЖЕ РЯДОМ 💀</div>
+  <div id="announce"></div>
+
+  <div id="bossHud">
+    <div class="boss-line">
+      <div>
+        <div class="boss-name" id="bossName">HIFUMI YAMADA — БОСС</div>
+        <div class="boss-sub" id="bossSub">Собери 60 монокоинов. Каждые 10 — выстрел Кибо.</div>
+      </div>
+      <b id="bossHpText">100%</b>
+    </div>
+    <div class="boss-bar"><div id="bossHpFill"></div></div>
+  </div>
+
+  <button id="settingsBtn" class="settingsFab" title="Настройки">⚙</button>
+
+  <div id="startScreen" class="overlay show">
+    <section class="panel intro">
+      <div class="eyebrow">RELEASE 1.1 · OFFLINE PWA · PC + IOS</div>
+      <h1>DESPAIR<br><span>RUNNER</span></h1>
+      <p>Шуичи тащит надежду через мир, который пытается утопить его в отчаянии. Собирай энергию для Кибо, пробивай путь и переживи 20 этапов.</p>
+      <div class="controls desktopControls">
+        <div><b>WASD / СТРЕЛКИ</b><span>движение</span></div>
+        <div><b>SHIFT</b><span>спринт</span></div>
+        <div><b>SPACE</b><span>рывок / прыжок</span></div>
+      </div>
+
+      <div class="mobileControlHint">
+        <b>НА ТЕЛЕФОНЕ</b>
+        <span>экранные кнопки автоматически меняются под режим</span>
+      </div>
+
+      <div class="difficulty">
+        <button class="diffBtn selected" data-diff="normal">NORMAL</button>
+        <button class="diffBtn" data-diff="despair">DESPAIR</button>
+      </div>
+
+      <div class="saveTitle">СОХРАНЕНИЯ</div>
+      <div id="saveSlots" class="saveSlots"></div>
+      <div class="saveNote">Новая игра в занятом слоте сразу стирает старую контрольную точку этого слота.</div>
+
+      <div class="startActions">
+        <button id="startSettingsBtn" class="secondaryBtn">НАСТРОЙКИ</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="levelScreen" class="overlay">
+    <section class="panel level-panel">
+      <div class="eyebrow">УРОВЕНЬ ПРОЙДЕН</div>
+      <h2 id="levelDoneTitle">УРОВЕНЬ 1</h2>
+      <div id="levelRank" class="levelRank">A</div><div id="levelStatsSummary" class="levelStatsSummary"></div><p>Выбери апгрейд Шуичи. Редкий = 2 стака, легендарный = 3.</p>
+      <div id="perkChoices" class="perkChoices"></div>
+    </section>
+  </div>
+
+  <div id="gameOver" class="overlay">
+    <section class="panel">
+      <div class="eyebrow">ТЕБЯ ДОГНАЛИ</div>
+      <h2 id="deathTitle">КОНЕЦ 💀</h2>
+      <p id="deathText">Это было неизбежно.</p>
+      <div class="stats">Уровень: <b id="deathLevel">1</b> · XP: <b id="deathXp">0</b></div>
+      <div class="deathActions">
+        <button id="restartBtn">НОВЫЙ ЗАБЕГ В ЭТОМ СЛОТЕ</button>
+        <button id="deathCheckpointBtn" class="checkpointBtn" style="display:none">С КОНТРОЛЬНОЙ ТОЧКИ</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="victory" class="overlay">
+    <section class="panel victory-panel final-panel">
+      <div id="victoryEyebrow" class="eyebrow">DESPAIR RUNNER // CAMPAIGN COMPLETE</div>
+      <h2 id="victoryTitle">НАДЕЖДА НЕ УМЕРЛА</h2>
+      <p id="victoryText">Джунко не была побеждена. Но Шуичи всё равно нашёл выход.</p>
+
+      <div id="victoryRank" class="finalRank">S</div>
+
+      <div class="finalStatsGrid">
+        <div><small>ВРЕМЯ</small><b id="victoryTime">00:00</b></div>
+        <div><small>СМЕРТИ</small><b id="victoryDeaths">0</b></div>
+        <div><small>ЭНЕРГИЯ</small><b id="victoryEnergy">0</b></div>
+        <div><small>XP</small><b id="victoryXp">0</b></div>
+        <div><small>ЭТАПЫ</small><b id="victoryStages">20/20</b></div>
+        <div><small>СТАКИ ПЕРКОВ</small><b id="victoryPerks">0</b></div>
+        <div><small>СЛОЖНОСТЬ</small><b id="victoryDifficulty">NORMAL</b></div>
+        <div><small>РЕЖИМ</small><b id="victoryRunType">CAMPAIGN</b></div>
+      </div>
+
+      <div class="finalActions">
+        <button id="victoryRestartBtn">НОВЫЙ ЗАБЕГ В ЭТОМ СЛОТЕ</button>
+        <button id="victoryMenuBtn" class="secondaryBtn">К СОХРАНЕНИЯМ</button>
+      </div>
+    </section>
+  </div>
+
+
+
+  <div id="storyScreen" class="overlay">
+    <section class="storyPanel">
+      <div class="storyTop">DESPAIR RUNNER // STORY</div>
+      <div class="storyBody">
+        <div class="storyPortraitBox">
+          <img id="storyPortrait" alt="">
+          <div id="storyPortraitFallback">?</div>
+        </div>
+        <div class="storyDialogue">
+          <div id="storySpeaker">ШУИЧИ</div>
+          <div id="storyText">...</div>
+          <button id="storyNextBtn">ДАЛЬШЕ ▶</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="settingsScreen" class="overlay">
+    <section class="panel settings-panel">
+      <div class="eyebrow">НАСТРОЙКИ</div>
+      <h2>ЗВУК</h2>
+
+      <div class="settingRow">
+        <div><b>МУЗЫКА</b><span>Фоновая музыка уровней и боссов</span></div>
+        <div class="sliderBox"><input id="musicVolume" type="range" min="0" max="100" value="12"><b id="musicVolumeValue">12%</b></div>
+      </div>
+
+      <div class="settingRow">
+        <div><b>ЭФФЕКТЫ</b><span>Монеты, Кибо, попадания и пердёж</span></div>
+        <div class="sliderBox"><input id="sfxVolume" type="range" min="0" max="100" value="72"><b id="sfxVolumeValue">72%</b></div>
+      </div>
+
+      <div class="settingRow">
+        <div><b>ГОЛОС</b><span>Голосовые реплики и смех</span></div>
+        <div class="sliderBox"><input id="voiceVolume" type="range" min="0" max="100" value="92"><b id="voiceVolumeValue">92%</b></div>
+      </div>
+
+      <div class="settingRow toggleRow">
+        <div><b>ТРЯСКА ЭКРАНА</b><span>Удары, рывки и мощные атаки</span></div>
+        <button id="shakeToggle" class="toggleBtn on">ВКЛ</button>
+      </div>
+
+      <div class="settingsHint">ESC — открыть/закрыть настройки. Изменения сохраняются автоматически.</div>
+      <button id="closeSettingsBtn">ГОТОВО</button>
+    </section>
+  </div>
+
+
+  <div id="offlineBadge" class="offlineBadge">OFFLINE</div>
+  <button id="fullscreenBtn" class="fullscreenFab" title="Полный экран">⛶</button>
+
+  <div id="mobileControls" aria-hidden="true">
+    <div id="mobileDpad" class="mobileDpad">
+      <button class="touchKey mobileUp" data-touch-key="KeyW" aria-label="Вверх">▲</button>
+      <button class="touchKey mobileLeft" data-touch-key="KeyA" aria-label="Влево">◀</button>
+      <button class="touchKey mobileRight" data-touch-key="KeyD" aria-label="Вправо">▶</button>
+      <button class="touchKey mobileDown" data-touch-key="KeyS" aria-label="Вниз">▼</button>
+    </div>
+
+    <div id="mobileActions" class="mobileActions">
+      <button id="mobileSprint" class="mobileSprint touchKey" data-touch-key="ShiftLeft">СПРИНТ</button>
+      <button id="mobileSecondary" class="mobileSecondary">ПРЕДМЕТ</button>
+      <button id="mobilePrimary" class="mobilePrimary">РЫВОК</button>
+    </div>
+  </div>
+
+  <div id="rotateHint">
+    <div>
+      <b>ПОВЕРНИ ТЕЛЕФОН ↻</b>
+      <span>DESPAIR RUNNER рассчитан на горизонтальный экран</span>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+<script src="game.js"></script>
+
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+
+  const badge=document.getElementById('offlineBadge');
+  const setBadge=(ready)=>{
+    if(!badge) return;
+    badge.classList.toggle('ready',!!ready);
+    badge.textContent=ready?'OFFLINE READY':'OFFLINE';
+  };
+
+  window.addEventListener('load', async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
+      await navigator.serviceWorker.ready;
+      setBadge(true);
+
+      // Ask an already active SW to fill any files added after install.
+      if(reg.active) reg.active.postMessage({type:'PRECACHE_NOW'});
+    }catch(err){
+      setBadge(false);
+      console.warn('Offline mode unavailable on this origin:',err);
+    }
+  });
+
+  window.addEventListener('online',()=>{
+    if(navigator.serviceWorker.controller) setBadge(true);
+  });
+  window.addEventListener('offline',()=>{
+    if(navigator.serviceWorker.controller) setBadge(true);
+  });
+})();
+</script>
+</body>
+</html>
